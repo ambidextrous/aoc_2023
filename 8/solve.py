@@ -85,6 +85,7 @@ def take_steps(node_dict: Dict[str, Node], start_pos: str, end_pos: str, directi
     step_counter = 0
     current_pos = start_pos
     directions_index = 0
+    print(f"start_pos = {start_pos}")
     while True:
         direction = directions[directions_index]
         current_node = node_dict[current_pos]
@@ -100,7 +101,37 @@ def take_steps(node_dict: Dict[str, Node], start_pos: str, end_pos: str, directi
         if directions_index == len(directions):
             directions_index = 0
         step_counter += 1
-        if step_counter % 1000 == 0:
+        if step_counter % 10000000 == 0:
+            print(f"step_counter = {step_counter}")
+        #print()
+        #print(f"current_node = {current_node}")
+        #print(f"direction = {direction}")
+        #print(f"directions_index = {directions_index}")
+        #print(f"current_pos = {current_pos}")
+        #print(f"step_counter = {step_counter}")
+        
+
+def take_steps_to_z(node_dict: Dict[str, Node], start_pos: str, directions: List[str]) -> str:
+    step_counter = 0
+    current_pos = start_pos
+    directions_index = 0
+    print(f"start_pos = {start_pos}")
+    while True:
+        direction = directions[directions_index]
+        current_node = node_dict[current_pos]
+        if current_node.name.endswith("Z"):
+            return step_counter
+        if direction == "L":
+            current_pos = current_node.left
+        elif direction == "R":
+            current_pos = current_node.right
+        else:
+            raise ValueError(str(direction))
+        directions_index += 1
+        if directions_index == len(directions):
+            directions_index = 0
+        step_counter += 1
+        if step_counter % 10000000 == 0:
             print(f"step_counter = {step_counter}")
         #print()
         #print(f"current_node = {current_node}")
@@ -138,6 +169,29 @@ def take_simultaneous_steps(node_dict: Dict[str, Node], start_positions: List[st
             print(f"current_positions = {current_positions}")
             print(f"step_counter = {step_counter}")
         
+
+
+def solve3(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l.strip() for l in raw_list]
+    cleaned_list = [item for item in raw_list if len(item) > 0] 
+    print(f"cleaned_list = {cleaned_list}")
+    directions = list(cleaned_list[0])
+    print(f"directions = {directions}")
+    nodes = [Node(l) for l in cleaned_list[1:]]
+    print(f"nodes = {nodes}")
+    node_dict = {n.name: n for n in nodes}
+    print(f"node_dict = {node_dict}")
+    start_positions = [k for k in node_dict if k.endswith("A")]
+    print(f"start_positions = {start_positions}")
+    distances = [take_steps_to_z(node_dict, pos, directions) for pos in start_positions] 
+    print(f"distances = {distances}")
+    import math
+    result = math.lcm(*distances)
+
+    return result
+
 
 def solve2(input_string: str) -> List[int]:
     result = None
@@ -185,9 +239,8 @@ def solve(input_string: str) -> List[int]:
 #with open("input.txt", "r") as f:
 #    print(solve(f.read()[:-1]))
 
-print(solve2(TEST_INPUT_3))
+print(solve3(TEST_INPUT_3))
 #        
 with open("input.txt", "r") as f:
-    print(solve2(f.read()[:-1]))
+    print(solve3(f.read()[:-1]))
 
-# Notes 100000000 is too low
