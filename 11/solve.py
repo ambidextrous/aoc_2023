@@ -216,10 +216,10 @@ def expand_galaxy_ys(galaxies: Dict[int, Tuple[int]], universe: List[str]) -> Di
 def expand_galaxy(galaxies: List[str], universe: List[str], factor: int)-> List[str]:
     y_galaxies = deepcopy(galaxies)
     y_expanded_galaxies = expand_galaxy_ys(y_galaxies, universe)
-    print(f"y_expanded_galaxies = {y_expanded_galaxies}")
+    #print(f"y_expanded_galaxies = {y_expanded_galaxies}")
     x_galaxies = deepcopy(galaxies)
     x_expanded_galaxies = expand_galaxy_xs(x_galaxies, universe)
-    print(f"x_expanded_galaxies = {x_expanded_galaxies}")
+    #print(f"x_expanded_galaxies = {x_expanded_galaxies}")
     combined_galaxies = {}
     for identifier in galaxies:
         x = x_expanded_galaxies[identifier][0] + (factor-1) * x_expanded_galaxies[identifier][2] 
@@ -233,14 +233,14 @@ def solve2(input_string: str) -> List[int]:
     raw_list = input_string.split("\n")
     raw_list = [l.strip() for l in raw_list]
     cleaned_list = [item for item in raw_list if len(item) > 0] 
-    print(f"cleaned_list = {cleaned_list}")
+    #print(f"cleaned_list = {cleaned_list}")
     galaxies = get_galaxies(cleaned_list)
-    print(f"galaxies = {galaxies}")
+    #print(f"galaxies = {galaxies}")
     factor = 1000000
     expanded_galaxies = expand_galaxy(galaxies, cleaned_list, factor)
-    print(f"expanded_galaxies = {expanded_galaxies}")
+    #print(f"expanded_galaxies = {expanded_galaxies}")
     dists = get_galaxy_dists(expanded_galaxies)
-    print(f"dists = {dists}")
+    #print(f"dists = {dists}")
     result = sum([d for _, d in dists.items()])
     
     return result
@@ -251,13 +251,13 @@ def solve(input_string: str) -> List[int]:
     raw_list = input_string.split("\n")
     raw_list = [l.strip() for l in raw_list]
     cleaned_list = [item for item in raw_list if len(item) > 0] 
-    print(f"cleaned_list = {cleaned_list}")
+    #print(f"cleaned_list = {cleaned_list}")
     expanded = expand(cleaned_list)
-    print(f"expanded = {expanded}")
+    #print(f"expanded = {expanded}")
     galaxies = get_galaxies(expanded)
-    print(f"galaxies = {galaxies}")
+    #print(f"galaxies = {galaxies}")
     dists = get_galaxy_dists(galaxies)
-    print(f"dists = {dists}")
+    #print(f"dists = {dists}")
     dist_sum = sum([d for _, d in dists.items()])
     
     return dist_sum
