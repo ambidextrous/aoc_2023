@@ -140,6 +140,51 @@ def get_valid_combs(record: str, state: str, target: List[int], valid_combs: Lis
             raise ValueError(f"Unexpected value {next_char}")
      
 
+def get_valid_combs_count(record: str, state: str, target: List[int], valid_combs_counter: Dict[str, int]) -> None:
+    #print(f"record = {record}; state = {state}; target = {target}; valid_combs = {valid_combs}")
+    if len(record) == 0:
+        if extract_schema(state, 0) == target:
+            valid_combs_counter["count"] += 1
+    else:
+        next_char = record[0]
+        options = [".", "#"]
+        if next_char in options:
+            get_valid_combs_count(record[1:], state+next_char, target, valid_combs_counter)
+        elif next_char == "?":
+            for option in options:
+                new_state = state + option
+                #print(f"new_state = {new_state}")
+                schema = extract_schema(new_state, 0)
+                #print(f"schema = {schema}")
+                if is_subschema(schema, target):
+                    get_valid_combs_count(record[1:], new_state, target, valid_combs_counter)
+        else:
+            raise ValueError(f"Unexpected value {next_char}")
+
+
+
+def solve2(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l.strip() for l in raw_list]
+    cleaned_list = [item for item in raw_list if len(item) > 0] 
+    print(f"cleaned_list = {cleaned_list}")
+    records = ["?".join([parse_record(s)] * 5) for s in cleaned_list]
+    print(f"records = {records}")
+    schemas = [parse_schema(s) * 5 for s in cleaned_list]
+    print(f"schemas = {schemas}")
+    counter = {"count": 0}
+    for i in range(len(cleaned_list)):
+        get_valid_combs_count(records[i],"",schemas[i],counter)
+        print(i+1)
+        print(records[i])
+        print((i+1)/len(cleaned_list))
+        print(counter)
+    print(counter)
+    result = counter["count"]
+    
+    return result
+
 def solve(input_string: str) -> List[int]:
     result = None
     raw_list = input_string.split("\n")
@@ -158,22 +203,18 @@ def solve(input_string: str) -> List[int]:
     valid_counts = [len(item) for item in valid_combs]
     result = sum(valid_counts)
     
-    
     return result
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
 #print(solve(TEST_INPUT_2))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1]))
+#with open("input.txt", "r") as f:
+#    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
-#print(solve2(TEST_INPUT_2))
-#print(solve2(TEST_INPUT_3))
-#print(solve2(TEST_INPUT_4))
 #        
-#with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
 
