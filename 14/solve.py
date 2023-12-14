@@ -49,6 +49,54 @@ O.#..O.#.#
 #
 #Tilt the platform so that the rounded rocks all roll north. Afterward, what is the total load on the north support beams?
 
+#--- Part Two ---
+#The parabolic reflector dish deforms, but not in a way that focuses the beam. To do that, you'll need to move the rocks to the edges of the platform. Fortunately, a button on the side of the control panel labeled "spin cycle" attempts to do just that!
+#
+#Each cycle tilts the platform four times so that the rounded rocks roll north, then west, then south, then east. After each tilt, the rounded rocks roll as far as they can before the platform tilts in the next direction. After one cycle, the platform will have finished rolling the rounded rocks in those four directions in that order.
+#
+#Here's what happens in the example above after each of the first few cycles:
+#
+#After 1 cycle:
+#.....#....
+#....#...O#
+#...OO##...
+#.OO#......
+#.....OOO#.
+#.O#...O#.#
+#....O#....
+#......OOOO
+##...O###..
+##..OO#....
+#
+#After 2 cycles:
+#.....#....
+#....#...O#
+#.....##...
+#..O#......
+#.....OOO#.
+#.O#...O#.#
+#....O#...O
+#.......OOO
+##..OO###..
+##.OOO#...O
+#
+#After 3 cycles:
+#.....#....
+#....#...O#
+#.....##...
+#..O#......
+#.....OOO#.
+#.O#...O#.#
+#....O#...O
+#.......OOO
+##...O###.O
+##.OOO#...O
+#This process should work if you leave it running long enough, but you're still worried about the north support beams. To make sure they'll survive for a while, you need to calculate the total load on the north support beams after 1000000000 cycles.
+#
+#In the above example, after 1000000000 cycles, the total load on the north support beams is 64.
+#
+#Run the spin cycle for 1000000000 cycles. Afterward, what is the total load on the north support beams?
+
 from typing import List, Dict, Any, Tuple, Iterable, Set
 from copy import deepcopy
 import math
@@ -113,14 +161,14 @@ def tilt_grid(grid: List[str]) -> List[str]:
     tilted_grid = [tilt_line(l) for l in grid]
     return tilted_grid
 
-
+@cache
 def score_grid(grid: List[str]) -> int:
     total = 0
     for y in range(len(grid)):
          multiplier = len(grid) - y
          score = get_O_count(grid[y])
-         print(f"multiplier = {multiplier}")
-         print(f"score = {score}")
+         #print(f"multiplier = {multiplier}")
+         #print(f"score = {score}")
          total += score * multiplier
     return total
 
@@ -129,6 +177,42 @@ def print_grid(grid: List[str]) -> None:
     for l in grid:
         print(l)
     print()
+
+
+@cache
+def cycle(grid: Tuple[str]) -> Tuple[Tuple[str]]:
+    north_tilted = turn(turn(turn(tilt_grid(turn(grid)))))
+    #print("north_tilted:")
+    print_grid(north_tilted)
+    west_tilted = tilt_grid(north_tilted)
+    #print("west_tilted:")
+    print_grid(west_tilted)
+    south_tilted = turn(tilt_grid(turn(turn(turn(west_tilted)))))
+    #print("south_tilted:")
+    print_grid(south_tilted)
+    east_tilted = tuple(turn(turn(tilt_grid(turn(turn(south_tilted))))))
+    score = score_grid(east_tilted)
+    return tuple(east_tilted), score
+    
+
+def solve2(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l.strip() for l in raw_list]
+    cleaned_list = [item for item in raw_list if len(item) > 0]
+    original_grid = tuple(cleaned_list) 
+    print("original_grid:")
+    print_grid(original_grid)
+    n = 1000000000
+    cycled_grid = deepcopy(original_grid)
+    score = None
+    for i in range(n):
+        cycled_grid, score = cycle(cycled_grid)
+        if i % 1000000 == 0:
+            print(f"{i}: {i/n}: {score}")
+    result = score
+
+    return result
 
 
 def solve(input_string: str) -> List[int]:
@@ -155,13 +239,14 @@ def solve(input_string: str) -> List[int]:
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1]))
+#with open("input.txt", "r") as f:
+#    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
-#with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
 
+# Brute for solution finished in 17 minutes for part 2
