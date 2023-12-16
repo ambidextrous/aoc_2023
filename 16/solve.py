@@ -55,6 +55,37 @@ TEST_INPUT = r""".|...\....
 #
 #The light isn't energizing enough tiles to produce lava; to debug the contraption, you need to start by analyzing the current situation. With the beam starting in the top-left heading right, how many tiles end up being energized?
 
+#--- Part Two ---
+#As you try to work out what might be wrong, the reindeer tugs on your shirt and leads you to a nearby control panel. There, a collection of buttons lets you align the contraption so that the beam enters from any edge tile and heading away from that edge. (You can choose either of two directions for the beam if it starts on a corner; for instance, if the beam starts in the bottom-right corner, it can start heading either left or upward.)
+#
+#So, the beam could start on any tile in the top row (heading downward), any tile in the bottom row (heading upward), any tile in the leftmost column (heading right), or any tile in the rightmost column (heading left). To produce lava, you need to find the configuration that energizes as many tiles as possible.
+#
+#In the above example, this can be achieved by starting the beam in the fourth tile from the left in the top row:
+#
+#.|<2<\....
+#|v-v\^....
+#.v.v.|->>>
+#.v.v.v^.|.
+#.v.v.v^...
+#.v.v.v^..\
+#.v.v/2\\..
+#<-2-/vv|..
+#.|<<<2-|.\
+#.v//.|.v..
+#Using this configuration, 51 tiles are energized:
+#
+#.#####....
+#.#.#.#....
+#.#.#.#####
+#.#.#.##...
+#.#.#.##...
+#.#.#.##...
+#.#.#####..
+#########..
+#.#######..
+#.#...#.#..
+#Find the initial beam configuration that energizes the largest number of tiles; how many tiles are energized in that configuration?
+
 
 from typing import List, Dict, Any, Tuple, Iterable, Set
 from copy import deepcopy
@@ -65,6 +96,8 @@ from functools import reduce
 from operator import concat
 
 sys.setrecursionlimit(100000)
+
+MAZE = {}
 
 
 def get_next_coord(x: int, y: int, h: str, char: str) -> Tuple[int, int, str]:
@@ -123,9 +156,14 @@ def generate_maze(grid: List[str]) -> Dict[str, Tuple[int, int, str]]:
                         maze[current] += (pos,)
     return maze 
 
-
-def run_maze(path: Tuple[Tuple[int, int, str]], x: int, y: int, h: str, maze: Dict[Tuple[int, int, str], Tuple[int, int, str]]) -> Tuple[Tuple[int, int]]:
-    print(f"x = {x}; y = {y}; h = {h}; path = {path}")
+@cache
+#def run_maze(path: Tuple[Tuple[int, int, str]], x: int, y: int, h: str, maze: Dict[Tuple[int, int, str], Tuple[int, int, str]]) -> Tuple[Tuple[int, int]]:
+def run_maze(path: Tuple[Tuple[int, int, str]], x: int, y: int, h: str, grid: Tuple[str]) -> Tuple[Tuple[int, int]]:
+    maze = MAZE
+    if len(path) % 1000 == 0:
+        print(len(path))
+        print_activated(path, grid)
+        #print(f"x = {x}; y = {y}; h = {h}; path = {path}")
     current_pos = (x, y, h)
     if current_pos in path:
         return ()
@@ -138,23 +176,60 @@ def run_maze(path: Tuple[Tuple[int, int, str]], x: int, y: int, h: str, maze: Di
         y_1 = pos[1]
         h_1 = pos[2]
         path_1 = path + ((x, y, h),)
-        future_path = ((x,y),(x_1, y_1)) + run_maze(path_1, x_1, y_1, h_1, maze)
+        future_path = ((x,y),(x_1, y_1)) + run_maze(path_1, x_1, y_1, h_1, grid)
         for p in future_path:
             if p not in path and p not in future_paths:
                 future_paths += (p,)
-    print(f"future_paths =  {future_paths}")
+    #print(f"future_paths =  {future_paths}")
     return future_paths
+
+
+def run_maze_with_list(activated: List[Tuple[int,int,str]], x: int, y: int, h: str, maze: Dict[Tuple[int, int, str], Tuple[Tuple[int, int, str]]]) -> Tuple[Tuple[int, int]]:
+    if len(activated) % 1000 == 0:
+        print(len(activated))
+        #print_activated(activated, grid)
+        #print(f"x = {x}; y = {y}; h = {h}; path = {path}")
+    current_pos = (x, y, h)
+    if current_pos not in activated:
+        activated += [current_pos]
+        next_positions = maze[current_pos]
+        if len(next_positions) == 3:
+            next_positions = (next_positions,)
+        future_paths = ()
+        for pos in next_positions:
+            x_1 = pos[0]
+            y_1 = pos[1]
+            h_1 = pos[2]
+            run_maze_with_list(activated, x_1, y_1, h_1, maze)
 
 
 def print_activated(activated: Tuple[Tuple[int, int]], grid: List[str]) -> None:
     for y in range(len(grid)):
         line = ""
         for x in range(len(grid[0])):
-            if (x, y) in activated:
+            if (x, y) in activated or (x, y, "N") in activated or (x, y, "S") in activated or (x, y, "E") in activated or (x, y, "W") in activated:
                 line += "#"
             else:
                 line += "."
         print(line)
+
+#class Node:
+#    def __init__(self, x: int, y: int, char: str):
+#        self.x = x
+#        self.y = y
+#        self.char = char
+#        self.north_node = tuple()
+#        self.south_node = tuple()
+#        self.east_node = tuple()
+#        self.west_node = tuple()
+#        self.north_tiles = tuple()
+#        self.south_tiles = tuple()
+#        self.east_tiles = tuple()
+#        self.west_tiles = tuple()
+        
+
+def dedup_activated(activated: Tuple[Tuple[int, int]]) -> Tuple[Tuple[int, int]]:
+    return sorted(list(set([(item[0],item[1]) for item in activated])))
 
 
 def solve(input_string: str) -> List[int]:
@@ -165,12 +240,13 @@ def solve(input_string: str) -> List[int]:
     print(f"cleaned_list = {cleaned_list}")
     maze = generate_maze(cleaned_list)
     print(f"maze = {maze}")
-    activated = run_maze((), 0, 0, "E", maze)
+    activated = [] 
+    run_maze_with_list(activated, 0, 0, "E", maze)
     print(f"activated = {activated}")
-    print_activated(activated, cleaned_list)
-    result = len(activated)
-    print(f'maze[(9,2,"E")] = {maze[(9,2,"E")]}')
-    print(f'maze[(8,2,"E")] = {maze[(8,2,"E")]}')
+    deduped = dedup_activated(activated)
+    print(f"deduped = {deduped}")
+    print_activated(deduped, cleaned_list)
+    result = len(deduped)
     
 
     return result
@@ -179,8 +255,8 @@ def solve(input_string: str) -> List[int]:
 
 print(solve(TEST_INPUT))
         
-#with open("input.txt", "rb") as f:
-#    print(solve(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
