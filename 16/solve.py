@@ -185,10 +185,6 @@ def run_maze(path: Tuple[Tuple[int, int, str]], x: int, y: int, h: str, grid: Tu
 
 
 def run_maze_with_list(activated: List[Tuple[int,int,str]], x: int, y: int, h: str, maze: Dict[Tuple[int, int, str], Tuple[Tuple[int, int, str]]]) -> Tuple[Tuple[int, int]]:
-    if len(activated) % 1000 == 0:
-        print(len(activated))
-        #print_activated(activated, grid)
-        #print(f"x = {x}; y = {y}; h = {h}; path = {path}")
     current_pos = (x, y, h)
     if current_pos not in activated:
         activated += [current_pos]
@@ -213,23 +209,45 @@ def print_activated(activated: Tuple[Tuple[int, int]], grid: List[str]) -> None:
                 line += "."
         print(line)
 
-#class Node:
-#    def __init__(self, x: int, y: int, char: str):
-#        self.x = x
-#        self.y = y
-#        self.char = char
-#        self.north_node = tuple()
-#        self.south_node = tuple()
-#        self.east_node = tuple()
-#        self.west_node = tuple()
-#        self.north_tiles = tuple()
-#        self.south_tiles = tuple()
-#        self.east_tiles = tuple()
-#        self.west_tiles = tuple()
-        
 
 def dedup_activated(activated: Tuple[Tuple[int, int]]) -> Tuple[Tuple[int, int]]:
     return sorted(list(set([(item[0],item[1]) for item in activated])))
+
+
+def evaluate_config(x: int, y: int, h: str, maze: Tuple[Tuple[int, int, str]]) -> int:
+    activated = []
+    run_maze_with_list(activated, x, y, h, maze)
+    deduped = dedup_activated(activated)
+    return len(deduped)
+
+
+def run_configs(maze: Tuple[Tuple[int, int, str]], grid: List[str]) -> List[int]:
+    scores = []
+    for x in range(len(grid[0])):
+        scores += [evaluate_config(x,0,"S",maze)]
+        scores += [evaluate_config(x,len(grid)-1,"N",maze)]
+        print(f"x = {x} {x/len(grid[0])}")
+    for y in range(len(grid)):
+        scores += [evaluate_config(0,y,"E",maze)]
+        scores += [evaluate_config(len(grid[0])-1,y,"W",maze)]
+        print(f"y = {y} {y/len(grid)}")
+    return scores
+
+
+def solve2(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l.strip() for l in raw_list]
+    cleaned_list = [item.replace("\n","") for item in raw_list if len(item) > 0]
+    print(f"cleaned_list = {cleaned_list}")
+    maze = generate_maze(cleaned_list)
+    print(f"maze = {maze}")
+    scores = run_configs(maze, cleaned_list)
+    print(f"scores = {scores}")
+    result = max(scores)
+
+    return result
+
 
 
 def solve(input_string: str) -> List[int]:
@@ -248,18 +266,17 @@ def solve(input_string: str) -> List[int]:
     print_activated(deduped, cleaned_list)
     result = len(deduped)
     
-
     return result
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1]))
-
-#print(solve2(TEST_INPUT))
-
 #with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+#    print(solve(f.read()[:-1]))
+
+print(solve2(TEST_INPUT))
+
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
 
