@@ -72,9 +72,9 @@ def get_next_coord(x: int, y: int, h: str, char: str) -> Tuple[int, int, str]:
         if char in [".", "-"]:
             return ((x+1, y, h),)
         elif char == "\ "[:1]:
-            return ((x, y-1, "S"),)
+            return ((x, y+1, "S"),)
         elif char == "/":
-            return ((x, y+1, "N"),)
+            return ((x, y-1, "N"),)
         elif char == "|":
             return ((x, y-1, "N"),(x, y+1, "S"),)
     elif h == "W":
@@ -104,8 +104,7 @@ def get_next_coord(x: int, y: int, h: str, char: str) -> Tuple[int, int, str]:
             return ((x-1, y, "W"),)
         elif char == "-":
             return ((x-1, y, "W"),(x+1, y, "E"),)
-    else:
-       raise ValueError(f"x = {x}; y = {z}; h = {h}")
+    raise ValueError(f"x = {x}; y = {z}; h = {h}")
 
 
 def generate_maze(grid: List[str]) -> Dict[str, Tuple[int, int, str]]:
@@ -139,9 +138,9 @@ def run_maze(path: Tuple[Tuple[int, int, str]], x: int, y: int, h: str, maze: Di
         y_1 = pos[1]
         h_1 = pos[2]
         path_1 = path + ((x, y, h),)
-        future_path = ((x,y),) + run_maze(path_1, x_1, y_1, h_1, maze)
+        future_path = ((x,y),(x_1, y_1)) + run_maze(path_1, x_1, y_1, h_1, maze)
         for p in future_path:
-            if p not in path:
+            if p not in path and p not in future_paths:
                 future_paths += (p,)
     print(f"future_paths =  {future_paths}")
     return future_paths
