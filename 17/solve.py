@@ -404,3 +404,4 @@ print(solve(TEST_INPUT))
 #with open("input.txt", "r") as f:
 #    print(solve2(f.read()[:-1]))
 
+# TODO: re-implement minimize function to only filter out nodes if target exceeds total of highest child
