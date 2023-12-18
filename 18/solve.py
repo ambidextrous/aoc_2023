@@ -47,6 +47,33 @@ U 2 (#7a21e3)"""
 #
 #The Elves are concerned the lagoon won't be large enough; if they follow their dig plan, how many cubic meters of lava could it hold?
 
+#--- Part Two ---
+#The Elves were right to be concerned; the planned lagoon would be much too small.
+#
+#After a few minutes, someone realizes what happened; someone swapped the color and instruction parameters when producing the dig plan. They don't have time to fix the bug; one of them asks if you can extract the correct instructions from the hexadecimal codes.
+#
+#Each hexadecimal code is six hexadecimal digits long. The first five hexadecimal digits encode the distance in meters as a five-digit hexadecimal number. The last hexadecimal digit encodes the direction to dig: 0 means R, 1 means D, 2 means L, and 3 means U.
+#
+#So, in the above example, the hexadecimal codes can be converted into the true instructions:
+#
+##70c710 = R 461937
+##0dc571 = D 56407
+##5713f0 = R 356671
+##d2c081 = D 863240
+##59c680 = R 367720
+##411b91 = D 266681
+##8ceee2 = L 577262
+##caa173 = U 829975
+##1b58a2 = L 112010
+##caa171 = D 829975
+##7807d2 = L 491645
+##a77fa3 = U 686074
+##015232 = L 5411
+##7a21e3 = U 500254
+#Digging out this loop and its interior produces a lagoon that can hold an impressive 952408144115 cubic meters of lava.
+#
+#Convert the hexadecimal color codes into the correct instructions; if the Elves follow this new dig plan, how many cubic meters of lava could the lagoon hold?
+
 from typing import List, Dict, Any, Tuple, Iterable, Set
 from copy import deepcopy
 import math
@@ -58,7 +85,6 @@ import json
 from collections import defaultdict
 from heapq import heappop, heappush
 from math import inf
-
 
 sys.setrecursionlimit(100000)
 
@@ -93,8 +119,8 @@ def dig(instructions: List[Dict[str, Any]], start: Tuple[int, int]) -> Dict[Tupl
         instruction = instructions[i]
         for j in range(instruction["metres"]):
             pos = move(pos[0], pos[1], instruction["direction"])
-            print(f"instruction = {instruction}")
-            print(f"pos = {pos}")
+            #print(f"instruction = {instruction}")
+            #print(f"pos = {pos}")
             path[pos] = instruction
         if pos == start:
             return path
@@ -135,7 +161,107 @@ def flood(pos: Tuple[int, int], path: Dict[Tuple[int, int], Any], flooded = List
         flooded += [pos]
         for new_pos in [(x, y+1), (x, y-1), (x+1, y), (x-1, y)]:
             flood(new_pos, path, flooded)
+
+
+def parse_hex(line: str) -> Dict[str, Any]:
+    color = line.split("#")[1][:-1]
+    last = color[-1]
+    if last == "0":
+        direction = "R"
+    elif last == "1":
+        direction = "D"
+    elif last == "2":
+        direction = "L"
+    elif last == "3":
+        direction = "U"
+    else:
+        raise ValueError(f"last = {last}")
+    metres = int(color[:-1],16)
+    instruction = {"direction": direction, "metres": metres, "color": color}
+    return instruction
+
+
+def count_fill(x_min: int, y_min: int, x_max: int, y_max: int, path: Dict[Tuple[int, int], Any]) -> None:
+    counter = 0
+    crossing_fill_zone = False
+    i = 0
+    for y in range(y_min, y_max+1):
+        i += 1
+        for x in range(x_min, x_max+1):
+            if (x, y) in path:
+                if crossing_fill_zone is True:
+                    crossing_fill_zone = False
+                elif crossing_fill_zone is False:
+                    crossing_fill_zone = True
+            if crossing_fill_zone:
+                counter += 1
+        print(f"({x},{y}); {i/abs(y_min-y_max)}; {counter}")
+    return counter
+
+
+def get_vertices(instructions: List[Dict[str, Any]], start: Tuple[int, int]) -> Dict[Tuple[int, int], Any]:
+    i = -1
+    pos = start
+    vertices = [start]
+    k = 0
+    while True:
+        k += 1 
+        i = (i + 1)  % len(instructions)
+        instruction = instructions[i]
+        for j in range(instruction["metres"]):
+            pos = move(pos[0], pos[1], instruction["direction"])
+        vertices += [pos]
+        if pos == start:
+            return vertices
+
+
+def calculate_polygon_area(vertices: List[Tuple[int, int]]):
+    """
+    Calculate the area of a polygon using the Shoelace Formula.
+
+    Parameters:
+    - vertices (list of tuples): List of (x, y) coordinates representing the vertices of the polygon.
+
+    Returns:
+    float: Area of the polygon.
+    """
+    n = len(vertices)
+
+    if n < 3:
+        # Not enough vertices to form a polygon
+        return 0.0
+
+    # Use the Shoelace Formula to calculate the area
+    area = 0.0
+    for i in range(n):
+        x1, y1 = vertices[i]
+        x2, y2 = vertices[(i + 1) % n]  # Wrap around for the last vertex
+        area += (x1 * y2 - x2 * y1)
+
+    area = abs(area) / 2.0
+
+    return area
+
     
+def solve2(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l.strip() for l in raw_list]
+    cleaned_list = [item.replace("\n","") for item in raw_list if len(item) > 0] 
+    print(f"cleaned_list = {cleaned_list}")
+    instructions = [parse_hex(line) for line in cleaned_list]
+    #instructions = [parse_instruction(line) for line in cleaned_list]
+    print(f"instructions = {instructions}")
+    vertices = get_vertices(instructions,(0,0))
+    print(f"vertices = {vertices}")
+    shoelace_area = calculate_polygon_area(vertices)
+    print(f"shoelace_area = {shoelace_area}")
+    path = dig_big(instructions, (0,0))
+    perimeter_area = len(path)
+    print(f"perimetere_area = {perimeter_area}")
+    result = shoelace_area + (perimeter_area/2) + 1 
+    
+    return result
     
 
 
@@ -164,12 +290,16 @@ def solve(input_string: str) -> List[int]:
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1]))
+#with open("input.txt", "r") as f:
+#    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
-#with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
+
+# Part 2 notes:
+#len(path) = 165266734
+#x_min = -4077264; y_min = -9608263; x_max = 9490626; y_max = 5072958
