@@ -98,11 +98,6 @@ def sort_part(part: Tuple[int], workflow: str) -> int:
 def calculate_valid_size(d: Dict[str, int], valids: List[int]) -> int:
     #print(f"calculate_valid_size: limit_dict = {limit_dict}; valids = {valids}")
     total = 1
-    x = len([i for i in range(1,4001) if i >= d["x_min"] and i <= d["x_max"]])
-    m = len([i for i in range(1,4001) if i >= d["m_min"] and i <= d["m_max"]])
-    a = len([i for i in range(1,4001) if i >= d["a_min"] and i <= d["a_max"]])
-    s = len([i for i in range(1,4001) if i >= d["s_min"] and i <= d["s_max"]])
-
     x =  d["x_max"] - d["x_min"] + 1
     m =  d["m_max"] - d["m_min"] + 1
     a =  d["a_max"] - d["a_min"] + 1
@@ -214,8 +209,8 @@ def solve(input_string: str) -> List[int]:
 #with open("input.txt", "r") as f:
 #    print(solve(f.read()[:-1]))
 
-print(solve2(TEST_INPUT))
+#print(solve2(TEST_INPUT))
 
-#with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
 
