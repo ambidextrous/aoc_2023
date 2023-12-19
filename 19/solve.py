@@ -98,11 +98,17 @@ def sort_part(part: Tuple[int], workflow: str) -> int:
 def calculate_valid_size(d: Dict[str, int], valids: List[int]) -> int:
     #print(f"calculate_valid_size: limit_dict = {limit_dict}; valids = {valids}")
     total = 1
-    x = len([i for i in range(1,4001) if i > d["x_min"] and i < d["x_max"]])
-    m = len([i for i in range(1,4001) if i > d["m_min"] and i < d["m_max"]])
-    a = len([i for i in range(1,4001) if i > d["a_min"] and i < d["a_max"]])
-    s = len([i for i in range(1,4001) if i > d["s_min"] and i < d["s_max"]])
+    x = len([i for i in range(1,4001) if i >= d["x_min"] and i <= d["x_max"]])
+    m = len([i for i in range(1,4001) if i >= d["m_min"] and i <= d["m_max"]])
+    a = len([i for i in range(1,4001) if i >= d["a_min"] and i <= d["a_max"]])
+    s = len([i for i in range(1,4001) if i >= d["s_min"] and i <= d["s_max"]])
+
+    x =  d["x_max"] - d["x_min"] + 1
+    m =  d["m_max"] - d["m_min"] + 1
+    a =  d["a_max"] - d["a_min"] + 1
+    s =  d["s_max"] - d["s_min"] + 1
     print()
+    print(f"d = {d}")
     print(f"x = {x}")
     print(f"m = {m}")
     print(f"a = {a}")
@@ -111,7 +117,6 @@ def calculate_valid_size(d: Dict[str, int], valids: List[int]) -> int:
     total *= m
     total *= a
     total *= s
-    print(f"d = {d}")
     print(f"total = {total}")
     valids += [total]
 
@@ -127,36 +132,38 @@ def update_limits(sub_flow: str, limit_dict: Dict[str, int]) -> Tuple[str, Dict[
         new_destination = sub_flow.split(":")[1]
         letter = sub_flow[0]
         target = int(sub_flow.split(">")[1].split(":")[0])
-        pass_limit_dict[f"{letter}_min"] = target
-        fail_limit_dict[f"{letter}_max"] = target + 1
+        pass_limit_dict[f"{letter}_min"] = target + 1
+        fail_limit_dict[f"{letter}_max"] = target 
         return new_destination, pass_limit_dict, fail_limit_dict
     elif "<" in sub_flow:
         new_destination = sub_flow.split(":")[1]
         letter = sub_flow[0]
         target = int(sub_flow.split("<")[1].split(":")[0])
-        pass_limit_dict[f"{letter}_max"] = target
-        fail_limit_dict[f"{letter}_min"] = target - 1
+        pass_limit_dict[f"{letter}_max"] = target - 1
+        fail_limit_dict[f"{letter}_min"] = target 
         return new_destination, pass_limit_dict, fail_limit_dict
     else:
         return sub_flow, pass_limit_dict, fail_limit_dict
 
 
-def slice_possibilities(workflow: str, limit_dict: Dict[str, int], valids: List[int]) -> None:
+def slice_possibilities(workflow: str, limit_dict: Dict[str, int], valids: List[int], trail: Tuple[str]) -> None:
     print()
     print(f"slice_possibilites:")
+    print(f"trail = {trail}")
     print(f"workflow = {workflow}")
     print(f"limit_dict = {limit_dict}")
     workflow = WORKFLOWS[workflow]
     for sub_flow in workflow:
         result, new_limit_dict, limit_dict = update_limits(sub_flow, limit_dict)
         if result == "R":
-            break
+            continue
         elif result == "A":
-            calculate_valid_size(limit_dict, valids)
+            calculate_valid_size(new_limit_dict, valids)
         elif result == "NO_MATCH":
             continue
         else:
-            slice_possibilities(result, new_limit_dict, valids)
+            new_trail = trail + (result,)
+            slice_possibilities(result, new_limit_dict, valids, new_trail)
 
 
 def solve2(input_string: str) -> List[int]:
@@ -171,11 +178,11 @@ def solve2(input_string: str) -> List[int]:
     print(f"WORKFLOWS = {WORKFLOWS}")
     limit_dict = {}
     for l in ["x", "m", "a", "s"]:
-        limit_dict[f"{l}_min"] = 0
-        limit_dict[f"{l}_max"] = 4001
+        limit_dict[f"{l}_min"] = 1
+        limit_dict[f"{l}_max"] = 4000
     print(f"limit_dict = {limit_dict}")
     valids = []
-    slice_possibilities("in", limit_dict, valids)
+    slice_possibilities("in", limit_dict, valids, ("in",))
     print(f"valids = {valids}")
     result = sum(valids)
 
