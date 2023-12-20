@@ -60,8 +60,8 @@ class BroadcasterNode:
        outputs = tuple()
        for d in self.destinations:
            outputs += ((d, "low", self.name),)
-       for o in outputs:
-           print(f"{self.name} -{o[1]}-> {o[0]}")
+       #for o in outputs:
+       #    print(f"{self.name} -{o[1]}-> {o[0]}")
        return outputs
 
 
@@ -102,8 +102,8 @@ class ConjunctionNode:
                output = (d, pulse, self.name)
                self.sent += output
                outputs += (output,)
-           for o in outputs:
-               print(f"{self.name} -{o[1]}-> {o[0]}")
+           #for o in outputs:
+           #    print(f"{self.name} -{o[1]}-> {o[0]}")
            return outputs
        
 
@@ -124,15 +124,15 @@ class FlipFlopNode:
                self.state = "on"
                outputs = tuple([(d, "high", self.name) for d in self.destinations])
                self.memory += outputs
-               for o in outputs:
-                   print(f"{self.name} -{o[1]}-> {o[0]}")
+               #for o in outputs:
+               #    print(f"{self.name} -{o[1]}-> {o[0]}")
                return outputs
            elif self.state == "on":
                self.state = "off"
                outputs = tuple([(d, "low", self.name) for d in self.destinations])
                self.memory += outputs
-               for o in outputs:
-                   print(f"{self.name} -{o[1]}-> {o[0]}")
+               #for o in outputs:
+               #    print(f"{self.name} -{o[1]}-> {o[0]}")
                return outputs
            else:
                raise ValueError(f"pulse = {pulse}; state = {self.state}")
@@ -194,13 +194,13 @@ def run_nodes(nodes: Dict[str, Any]) -> Tuple[Dict[str, Any], Tuple[int, int]]:
     history = (("broadcaster", "low", "button"),)
     #history = tuple()
     backlog = [("broadcaster", "low", "button")]
-    print(f"button -low-> broadcaster")
+    #print(f"button -low-> broadcaster")
     while len(backlog) > 0:
         nex = backlog.pop(0) 
         result = nodes[nex[0]].receive(nex[2], nex[1])
-        print(f"result = {result}")
+        #print(f"result = {result}")
         history += result
-        print(f"history = {history}")
+        #print(f"history = {history}")
         backlog = backlog + list(result)
     return nodes, history
 
@@ -226,6 +226,40 @@ def make_runs(nodes: Dict[str, Any], n_runs: int) -> Tuple[Tuple[str]]:
         print(f"history = {history}")
         histories += [history]
     return histories
+
+
+def make_runs_to_target(nodes: Dict[str, Any]) -> Tuple[Tuple[str]]:
+    factors = []
+    targets = ["pl", "mz", "lz", "zm"]
+    i = 0
+    while True:
+        i += 1
+        if i % 10000 == 0:
+            print(i)
+        nodes, history = run_nodes(nodes)
+        for h in history:
+            if h[0] in targets and h[1] == "low":
+                print(h)
+                factors += [i]
+        if len(factors) >= 4:
+            return factors
+
+
+def solve2(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l for l in raw_list]
+    cleaned_list = [item.replace("\n","") for item in raw_list if len(item) > 0]
+    print(f"cleaned_list = {cleaned_list}")
+    nodes = parse_nodes(cleaned_list)
+    print(f"nodes = {nodes}")
+    factors = make_runs_to_target(nodes)
+    total = 1 
+    for f in factors:
+        total *= f
+    result = total
+
+    return result
  
 
 def solve(input_string: str) -> List[int]:
@@ -254,11 +288,12 @@ def solve(input_string: str) -> List[int]:
 #print(solve(TEST_INPUT))
 #print(solve(TEST_INPUT_2))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1]))
+#with open("input.txt", "r") as f:
+#    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
-#with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
 
+# 100,000,000 is too low
