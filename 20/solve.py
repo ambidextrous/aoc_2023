@@ -183,21 +183,42 @@ def parse_nodes(lines: List[str]) -> Dict[str, Any]:
     return nodes
 
 
-def run_nodes(nodes: Dict[str, Any]) -> Tuple[int, int]:
+def run_nodes(nodes: Dict[str, Any]) -> Tuple[Dict[str, Any], Tuple[int, int]]:
     history = (("broadcaster", "low", "button"),)
+    #history = tuple()
     backlog = [("broadcaster", "low", "button")]
     print(f"button -low-> broadcaster")
     while len(backlog) > 0:
         nex = backlog.pop(0) 
-        #print(f"nex = {nex}")
         result = nodes[nex[0]].receive(nex[2], nex[1])
-        #print(f"result = {result}")
-        for r in result:
-            history += result
-        #backlog = list(result) + backlog
+        print(f"result = {result}")
+        history += result
+        print(f"history = {history}")
         backlog = backlog + list(result)
-        #print(f"backlog = {backlog}")
-    return history
+    return nodes, history
+
+
+def count_highs_and_lows(history: Tuple[Tuple[str]]) -> Tuple[int, int]:
+    highs = 0
+    lows = 0
+    for h in history:
+        if h[1] == "high":
+            highs += 1
+        elif h[1] == "low":
+            lows += 1
+        else:
+            raise ValueError(str(history))
+    return highs, lows
+
+
+def make_runs(nodes: Dict[str, Any], n_runs: int) -> Tuple[Tuple[str]]:
+    histories = []
+    for i in range(n_runs):
+        print()
+        nodes, history = run_nodes(nodes)
+        print(f"history = {history}")
+        histories += [history]
+    return histories
  
 
 def solve(input_string: str) -> List[int]:
@@ -207,8 +228,17 @@ def solve(input_string: str) -> List[int]:
     cleaned_list = [item.replace("\n","") for item in raw_list if len(item) > 0] 
     print(f"cleaned_list = {cleaned_list}")
     nodes = parse_nodes(cleaned_list)
-    history = run_nodes(nodes)
-    print(f"history = {history}")
+    print(f"nodes = {nodes}")
+    n_runs = 1000
+    histories = make_runs(nodes, n_runs)
+    #print(f"histories = {histories}")
+    highs_and_lows = [count_highs_and_lows(history) for history in histories]
+    #print(f"highs_and_lows = {highs_and_lows}")
+    high_count = sum([item[0] for item in highs_and_lows])
+    print(f"high_count = {high_count}")
+    low_count = sum([item[1] for item in highs_and_lows])
+    print(f"low_count = {low_count}")
+    result = high_count * low_count
 
     return result
 
