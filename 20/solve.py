@@ -172,11 +172,18 @@ def parse_nodes(lines: List[str]) -> Dict[str, Any]:
     print(f"nodes:")
     for n, v in nodes.items():
         print(f"    {n} : {v}")
+    output_nodes = {}
     for name, node in nodes.items():
         for destination in node.destinations:
-             destination_node = nodes[destination]
-             if destination_node.type == "conjunction":
-                  destination_node.add_input(name)
+            if destination in nodes:
+                destination_node = nodes[destination]
+                if destination_node.type == "conjunction":
+                    destination_node.add_input(name)
+            else:
+                node = OutputNode(destination, "final")
+                output_nodes[destination] = node
+    for k, v in output_nodes.items():
+        nodes[k] = v
     print(f"nodes with destinations = {nodes}")
     for n, v in nodes.items():
         print(f"    {n} : {v}")
@@ -244,11 +251,11 @@ def solve(input_string: str) -> List[int]:
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
 #print(solve(TEST_INPUT_2))
         
-#with open("input.txt", "r") as f:
-#    print(solve(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
