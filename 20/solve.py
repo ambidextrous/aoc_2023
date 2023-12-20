@@ -7,7 +7,8 @@ TEST_INPUT_2 = """broadcaster -> a
 %a -> inv, con
 &inv -> b
 %b -> con
-&con -> output"""
+&con -> output
+output -> output"""
 
 
 from typing import List, Dict, Any, Tuple, Iterable, Set
@@ -23,6 +24,23 @@ from heapq import heappop, heappush
 from math import inf
 
 sys.setrecursionlimit(100000)
+
+
+class OutputNode:
+   def __init__(self, name: str, destinations: Tuple[str]):
+       self.name = name
+       self.type = "output"
+       self.destinations = destinations
+       self.state = "out"
+
+   def __repr__(self):
+       return str(self)
+
+   def __str__(self):
+       return f"OutputNode : {self.name}; {self.type}; {self.destinations}; {self.state}"
+
+   def receive(self, sender: str, pulse: str) -> Tuple[Tuple[str, str]]:
+       return ()
 
 
 class BroadcasterNode:
@@ -132,13 +150,16 @@ def parse_nodes(lines: List[str]) -> Dict[str, Any]:
     nodes = {}
     print(f"lines = {lines}")
     for l in lines:
-        print(f"l = {l}")
+        #print(f"l = {l}")
         raw_name = l.split()[0]
-        print(f"raw_name = {raw_name}")
+        #print(f"raw_name = {raw_name}")
         destinations = tuple(l.split(" -> ")[1].split(", "))
         if raw_name == "broadcaster":
              name = raw_name
              node = BroadcasterNode("broadcaster", destinations)
+        elif raw_name == "output":
+             name = raw_name
+             node = OutputNode("output", destinations)
         elif raw_name[0] == "%":
              name = raw_name[1:]
              node = FlipFlopNode(name, destinations)
@@ -173,7 +194,8 @@ def run_nodes(nodes: Dict[str, Any]) -> Tuple[int, int]:
         #print(f"result = {result}")
         for r in result:
             history += result
-        backlog = list(result) + backlog
+        #backlog = list(result) + backlog
+        backlog = backlog + list(result)
         #print(f"backlog = {backlog}")
     return history
  
@@ -193,6 +215,7 @@ def solve(input_string: str) -> List[int]:
 
 
 print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT_2))
         
 #with open("input.txt", "r") as f:
 #    print(solve(f.read()[:-1]))
