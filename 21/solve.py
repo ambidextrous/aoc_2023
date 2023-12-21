@@ -132,18 +132,18 @@ def solve(input_string: str) -> List[int]:
     OBSTRUCTIONS = set([(item[0], item[1]) for item in grid if item[2] == -1])
     print(f"grid = {grid}")
     print_grid(grid)
-    num_steps = 6
+    num_steps = 64
     result = run_simulation(grid, num_steps)
 
     return result
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
 #print(solve(TEST_INPUT_2))
         
-#with open("input.txt", "r") as f:
-#    print(solve(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
