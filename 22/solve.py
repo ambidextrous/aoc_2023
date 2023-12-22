@@ -78,6 +78,24 @@ class Brick:
         under.reverse()
         self.under = under
 
+    def get_aboves(self, bricks: List[Any]) -> List[Any]:
+        aboves = []
+        for b in bricks:
+            for u in self.units:
+                for u_1 in b.units:
+                    if b.num != self.num and u.x == u_1.x and u.y == u_1.y and u.z == u_1.z-1:
+                        aboves += [b]
+        return aboves
+
+    def get_belows(self, bricks: List[Any]) -> List[Any]:
+        aboves = []
+        for b in bricks:
+            for u in self.units:
+                for u_1 in b.units:
+                    if b.num != self.num and u.x == u_1.x and u.y == u_1.y and u.z == u_1.z+1:
+                        aboves += [b]
+        return aboves
+
     def try_falling(self) -> bool:
         is_on_ground = self.on_ground()
         is_supported = any([self.is_supported_by(b) for b in self.under]) if len(self.under) > 0 else False
@@ -174,6 +192,20 @@ def fall(bricks: List[Brick], x_max: int, y_max: int, z_max: int) -> List[Brick]
             return bricks
          
 
+def get_disints(bricks: List[Brick]) -> List[Brick]:
+    disints = []
+    for brick in bricks:
+        aboves = brick.get_aboves(bricks)
+        if len(aboves) == 0:
+            disints += [brick]
+        else:
+            belows_of_aboves = [b.get_belows(bricks) for b in aboves]
+            lengths = [len(item) for item in belows_of_aboves]
+            if min(lengths) >= 2:
+                disints += [brick]
+    return disints
+
+
 def solve(input_string: str) -> List[int]:
     result = None
     raw_list = input_string.split("\n")
@@ -192,6 +224,9 @@ def solve(input_string: str) -> List[int]:
     print(f"bricks = {bricks}")
     print_bricks(bricks, x_max, y_max, z_max)
     fallen_bricks = fall(bricks, x_max, y_max, z_max)
+    disints = get_disints(fallen_bricks)
+    print(f"distints = {disints}")
+    result = len(disints)
 
     return result
 
