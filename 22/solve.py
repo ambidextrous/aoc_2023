@@ -37,6 +37,12 @@ class Unit:
     def __repr__(self):
         return str(self)
 
+    def __eq__(self, other):
+        return (self.x, self.y, self.z) == (other.x, other.y, other.z)
+
+    def __lt__(self, other):
+        return (self.x, self.y, self.z) < (other.x, other.y, other.z)
+  
 
 class Brick:
     def __init__(
@@ -76,7 +82,7 @@ class Brick:
                 if coord in brick_dict:
                     under += [brick_dict[coord]]
         under.reverse()
-        self.under = under
+        self.under = list(set(under))
 
     def get_aboves(self, bricks: List[Any]) -> List[Any]:
         aboves = []
@@ -186,8 +192,8 @@ def fall(bricks: List[Brick], x_max: int, y_max: int, z_max: int) -> List[Brick]
             brick_fell = b.try_falling()
             if brick_fell:
                 something_fell = True
-        print(i)
-        print_bricks(bricks, x_max, y_max, z_max)
+        #print(i)
+        #print_bricks(bricks, x_max, y_max, z_max)
         if something_fell is False:
             return bricks
          
@@ -195,15 +201,54 @@ def fall(bricks: List[Brick], x_max: int, y_max: int, z_max: int) -> List[Brick]
 def get_disints(bricks: List[Brick]) -> List[Brick]:
     disints = []
     for brick in bricks:
+        print()
+        print(f"brick = {brick}")
         aboves = brick.get_aboves(bricks)
+        print(f"aboves = {aboves}")
         if len(aboves) == 0:
             disints += [brick]
         else:
             belows_of_aboves = [b.get_belows(bricks) for b in aboves]
+            print(f"belows_of_aboves = {belows_of_aboves}")
             lengths = [len(item) for item in belows_of_aboves]
+            print(f"lengths = {lengths}")
             if min(lengths) >= 2:
                 disints += [brick]
+        print(f"distints = {[b.num for b in disints]}")
     return disints
+
+
+def clean_dict(occupation_dict: Tuple[Tuple[int], Brick], brick: Brick):
+    d = deepcopy(occupation_dict)
+    print([k for k in d])
+    print(brick.units)
+    for u in brick.units:
+        d.pop((u.x, u.y, u.z))
+    return d
+
+def test_fall(bricks: List[Brick], x_max: int, y_max: int, z_max: int) -> int:
+    occupation_dict = get_occupation_dict(bricks, x_max, y_max, z_max)
+    count = 0
+    for i in range(1,len(bricks)+1):
+        print(f"i = {i}; {(i+1)/len(bricks)}")
+        removed_brick = bricks[i]
+        cleaned_dict = clean_dict(occupation_dict, removed_brick)
+        bs = deepcopy(bricks)
+        new_bricks = bs[:i-1]+bs[i:]
+        occupation_dict = get_occupation_dict(new_bricks, x_max, y_max, z_max)
+        for b in new_bricks:
+            b.set_bricks_under(cleaned_dict)
+        copied_bricks = deepcopy(new_bricks)
+        fallen = fall(copied_bricks, x_max, y_max, z_max)
+        new_starts = sorted([n.units for n in new_bricks])
+        fallen_starts = sorted([n.units for n in fallen])
+        #print(f"len(new_starts) = {len(new_starts)}")
+        #print(f"new_starts = {new_starts}")
+        #print(f"fallen_starts = {fallen_starts}")
+        is_match = new_starts == fallen_starts
+        if is_match:
+            count += 1
+    return count
 
 
 def solve(input_string: str) -> List[int]:
@@ -222,22 +267,27 @@ def solve(input_string: str) -> List[int]:
         print(f"    {b}")
         b.set_bricks_under(occupation_dict)
     print(f"bricks = {bricks}")
-    print_bricks(bricks, x_max, y_max, z_max)
+    #print_bricks(bricks, x_max, y_max, z_max)
     fallen_bricks = fall(bricks, x_max, y_max, z_max)
+    #print_bricks(fallen_bricks, x_max, y_max, z_max)
+    #result = test_fall(fallen_bricks,x_max, y_max, z_max)
     disints = get_disints(fallen_bricks)
-    print(f"distints = {disints}")
+    #print_bricks(disints, x_max, y_max, z_max)
+    #print(f"distints = {disints}")
     result = len(disints)
 
     return result
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
         
-#with open("input.txt", "r") as f:
-#    print(solve(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
 #with open("input.txt", "r") as f:
 #    print(solve22(f.read()[:-1]))
+
+# 670 is too high
