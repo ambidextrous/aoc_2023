@@ -58,20 +58,34 @@ class Brick:
         for i in range(len(starts)):
             assert starts[i] <= ends[i], s
         units = ()
+        z_min = inf
+        z_max = -inf
         for x in range(starts[0], ends[0]+1): 
             for y in range(starts[1], ends[1]+1):
                 for z in range(starts[2], ends[2]+1):
+                    if z < z_min:
+                        z_min = z
+                    if z > z_max:
+                        z_max = z
                     unit = Unit(x,y,z)
                     units += (unit,)
         self.units = units
         self.volume = len(self.units)
         self.under = []
+        self.bottom = [u for u in self.units if u.z == z_min]
+        self.top = [u for u in self.units if u.z == z_max]
+        self.z_min = z_min
+        self.z_max = z_max
+        self.is_frozen = False
 
     def on_ground(self) -> bool:
         return any([u.z == 0 for u in self.units])
 
     def occupies(self, x: int, y: int, z: int) -> bool:
         return any([u.occupies(x,y,z) for u in self.units])
+
+    def __lt__(self, other):
+        return self.z_min < other.z_min
 
     def set_bricks_under(self, brick_dict: Tuple[Any]):
         under = []
@@ -125,7 +139,7 @@ class Brick:
         return False
  
     def __str__(self):
-        return f"Brick: [{self.num}] start={self.starts}; end={self.ends}; under = {[b.num for b in self.under]}; volume={self.volume}; units={self.units}"
+        return f"Brick: [{self.num}] volume={self.volume}; top = {self.top}; bottom = {self.bottom}; units={self.units}"
 
     def __repr__(self):
         return str(self)
@@ -229,15 +243,13 @@ def clean_dict(occupation_dict: Tuple[Tuple[int], Brick], brick: Brick):
 def test_fall(bricks: List[Brick], x_max: int, y_max: int, z_max: int) -> int:
     occupation_dict = get_occupation_dict(bricks, x_max, y_max, z_max)
     count = 0
-    for i in range(1,len(bricks)+1):
+    for i in range(1,len(bricks)):
         print(f"i = {i}; {(i+1)/len(bricks)}")
         removed_brick = bricks[i]
-        cleaned_dict = clean_dict(occupation_dict, removed_brick)
         bs = deepcopy(bricks)
         new_bricks = bs[:i-1]+bs[i:]
-        occupation_dict = get_occupation_dict(new_bricks, x_max, y_max, z_max)
         for b in new_bricks:
-            b.set_bricks_under(cleaned_dict)
+            b.set_bricks_under(occupation_dict)
         copied_bricks = deepcopy(new_bricks)
         fallen = fall(copied_bricks, x_max, y_max, z_max)
         new_starts = sorted([n.units for n in new_bricks])
@@ -251,39 +263,96 @@ def test_fall(bricks: List[Brick], x_max: int, y_max: int, z_max: int) -> int:
     return count
 
 
+class Floor:
+    def __init__(self, x_max: int, y_max: int):
+        self.x_max = x_max
+        self.y_max = y_max
+        self.set_zs(0)
+
+    def raise_tile(self, x: int, y: int, z: int) -> None:
+        print(f"raise_tile: x={x}; y={y}; z={z}")
+        current_z = self.top[x][y].z
+        if z < current_z:
+            raise ValueError(f"x={x}; y={y}; z={z}; floor={floor}")
+        self.top[x][y].z = z
+
+    def set_zs(self, z: int):
+        top = [Unit(x, y, z) for x in range(self.x_max+1) for y in range(self.y_max+1)]
+        outter_dict = {x: {} for x in range(self.x_max+1)}
+        for u in top:
+            outter_dict[u.x][u.y] = u
+        self.top = outter_dict
+                
+                
+       
+    def is_touched_by(self, brick: Brick) -> bool:
+        for u in brick.bottom:
+            print(f"u = {u}")
+            print(f"self.top = {self.top}")
+            u_1 = self.top[u.x][u.y]
+            print(f"u_1 = {u_1}")
+            if u.x == u_1.x and u.y == u_1.y and u.z == u_1.z + 1:
+                return True
+        return False
+
+    def __str__(self):
+        return f"Floor = {self.top}"
+ 
+    def __repr__(self):
+        return str(self)
+ 
+
+def freeze(bricks: List[Brick], floor: Floor) -> Tuple[List[Brick], List[Brick], Floor]:
+    frozen = []
+    active = []
+    floor = deepcopy(floor)
+    for i, brick in enumerate(bricks):
+        print(f"i = {i}")
+        print(f"brick = {brick}")
+        if floor.is_touched_by(brick):
+            print(f"brick.units = {brick.units}")
+            for u in brick.units:
+                print(f"u = {u}")
+                print(f"u.x = {u.x}")
+                floor.raise_tile(u.x, u.y, u.z)
+            frozen += [brick]
+        else:
+            active += [brick]
+    return active, frozen, floor
+
+    
+def drop(bricks: List[Brick], floor: Floor) -> List[Brick]:
+    frozen = []
+    active = []
+
+
 def solve(input_string: str) -> List[int]:
     result = None
     raw_list = input_string.split("\n")
     raw_list = [l for l in raw_list]
     cleaned_list = [item.replace("\n","") for item in raw_list if len(item) > 0] 
     print(f"cleaned_list = {cleaned_list}")
-    bricks = [Brick(l, i) for i, l in enumerate(cleaned_list)]
+    bricks = sorted([Brick(l, i) for i, l in enumerate(cleaned_list)])
     print(f"bricks = {bricks}")
     x_max, y_max, z_max = get_limits(bricks)
-    print(f"x_max = {x_max}, y_max = {y_max}, z_max = {z_max}")
-    occupation_dict = get_occupation_dict(bricks, x_max, y_max, z_max)
-    print(f"occupation_dict = {occupation_dict}")
-    for b in bricks:
-        print(f"    {b}")
-        b.set_bricks_under(occupation_dict)
-    print(f"bricks = {bricks}")
-    #print_bricks(bricks, x_max, y_max, z_max)
-    fallen_bricks = fall(bricks, x_max, y_max, z_max)
-    #print_bricks(fallen_bricks, x_max, y_max, z_max)
-    #result = test_fall(fallen_bricks,x_max, y_max, z_max)
-    disints = get_disints(fallen_bricks)
-    #print_bricks(disints, x_max, y_max, z_max)
-    #print(f"distints = {disints}")
-    result = len(disints)
+    floor = Floor(x_max, y_max) 
+    print(f"floor = {floor}")
+    active, frozen, floor = freeze(bricks, floor)
+    print(f"active = {active}")
+    print(f"len(active) = {len(active)}")
+    print(f"frozen = {frozen}")
+    print(f"len(frozen) = {len(frozen)}")
+    print(f"floor = {floor}")
+
 
     return result
 
 
 
-#print(solve(TEST_INPUT))
+print(solve(TEST_INPUT))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1]))
+#with open("input.txt", "r") as f:
+#    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
