@@ -48,7 +48,7 @@ def freeze(bricks: List[Tuple[Any]], frozen: Tuple[Tuple[Any]]) -> Tuple[Tuple[T
         if is_frozen:
             brick = tuple((u[0], u[1], u[2], u[3], "frozen") for u in brick)
             frozen += (brick,)
-            print(f"frozen = {frozen}")
+            #print(f"frozen = {frozen}")
         else:
             active += (brick,)
     return frozen, active
@@ -103,7 +103,7 @@ def drop(active: Tuple[Tuple[Any]], frozen: Tuple[Any]) -> Tuple[Any]:
     counter = 0
     while len(active) > 0:
         counter += 1
-        print()
+        #print()
         print(f"dropping, iteration {counter}")
         dropped_active = tuple()
         for brick in active:
@@ -112,13 +112,29 @@ def drop(active: Tuple[Tuple[Any]], frozen: Tuple[Any]) -> Tuple[Any]:
                 new_unit = (unit[0], unit[1], unit[2]-1, unit[3], unit[4])
                 new_brick += (new_unit,)
             dropped_active += (new_brick,)
-        print(f"dropped_active = {dropped_active}")
+        #print(f"dropped_active = {dropped_active}")
         new_frozen, new_active = freeze(dropped_active, frozen) 
-        print(f"new_frozen = {new_frozen}")
-        print(f"new_active = {new_active}")
+        #print(f"new_frozen = {new_frozen}")
+        #print(f"new_active = {new_active}")
         active = new_active
         frozen = new_frozen
     return frozen
+
+
+def disint(bricks: Tuple[Tuple[Any]]) -> int:
+    counter = 0
+    for i in range(len(bricks)):
+        print(f"i = {i}: {i/len(bricks)}; counter {counter}")
+        temp_pop = bricks[i]
+        before = bricks[:i]
+        after = bricks[i+1:]
+        new_bricks = before + after
+        new_frozen, new_active = freeze(new_bricks, tuple())
+        print(f"len(new_frozen) = {len(new_frozen)}")
+        print(f"len(new_active) = {len(new_active)}")
+        if len(new_active) > 0:
+            counter += 1
+    return counter
 
 
 def solve(input_string: str) -> List[int]:
@@ -131,23 +147,24 @@ def solve(input_string: str) -> List[int]:
     print(f"bricks = {bricks}")
     x_max, y_max, z_max = get_maxes(bricks)
     print(f"x_max = {x_max}; y_max = {y_max}; z_max = {z_max}")
-    print_bricks(bricks, x_max, y_max, z_max)
+    #print_bricks(bricks, x_max, y_max, z_max)
     frozen, active = freeze(bricks, tuple())
-    print_bricks(frozen, x_max, y_max, z_max)
-    print_bricks(active, x_max, y_max, z_max)
+    #print_bricks(frozen, x_max, y_max, z_max)
+    #print_bricks(active, x_max, y_max, z_max)
     dropped = drop(active, frozen)
     print(f"dropped = {dropped}")
     print("dropped:")
     print_bricks(dropped, x_max, y_max, z_max)
+    result = len(bricks) - disint(dropped)
 
     return result
 
 
 
-print(solve(TEST_INPUT))
+#print(solve(TEST_INPUT))
         
-#with open("input.txt", "r") as f:
-#    print(solve(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve(f.read()[:-1]))
 
 #print(solve2(TEST_INPUT))
 
