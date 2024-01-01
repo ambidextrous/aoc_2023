@@ -71,10 +71,10 @@ def get_intersections(
         is_self = h == hail 
         has_intersection = intersection is not None
         if (not is_self) and has_intersection:
-            is_future_intersection = get_dist(hail[0][:2], intersection) > get_dist(hail[1][:2], intersection)
-            print(f"is_future_intersection = {is_future_intersection}")
+            is_future_intersection_for_self = get_dist(hail[0][:2], intersection) > get_dist(hail[1][:2], intersection)
+            is_future_intersection_for_other = get_dist(h[0][:2], intersection) > get_dist(h[1][:2], intersection)
             is_in_bounds = intersection[0] >= lower_bound and intersection[0] <= upper_bound and intersection[1] >= lower_bound and intersection[1] <= upper_bound
-            if is_future_intersection and is_in_bounds:
+            if is_future_intersection_for_self and is_future_intersection_for_other and is_in_bounds:
                 intersections[h] = intersection
     return intersections
 
@@ -90,6 +90,16 @@ def parse_hail(s: str) -> Tuple[Tuple[int], Tuple[int]]:
     return tuple([position_1, position_2, velocity])
 
 
+def dedup_intersections(intersections: Dict[Tuple[Any], Tuple[Any]]) -> Tuple[Tuple[int]]:
+    deduped = []
+    for outer_key, outer_val in intersections.items():
+        for inner_key, inner_val in outer_val.items():
+            pair = tuple(sorted([inner_key[0][:2], outer_key[0][:2]]))
+            if pair not in deduped:
+                deduped += [pair]
+    return tuple(deduped)
+
+
 def solve(input_string: str, lower_bound: int, upper_bound: int) -> List[int]:
     result = None
     raw_list = input_string.split("\n")
@@ -102,20 +112,25 @@ def solve(input_string: str, lower_bound: int, upper_bound: int) -> List[int]:
     print(f"hails[0][0] = {hails[0][0]}")
     intersections = {hail: get_intersections(hail, hails, lower_bound, upper_bound) for hail in hails}
     print(f"intersections = {intersections}")
-    result = len([k for k, v in intersections.items() if len(v) > 0]) / 2
+    deduped = dedup_intersections(intersections)
+    print(f"deduped = {deduped}")
+    for item in deduped:
+        print(item)
+    result = len(deduped)
 
 
     return result
 
 
 
-print(solve(TEST_INPUT,7,27))
+#print(solve(TEST_INPUT,7,27))
         
-#with open("input.txt", "r") as f:
-#    print(solve(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve(f.read()[:-1], 200000000000000, 400000000000000))
 
 #print(solve2(TEST_INPUT))
 
 #with open("input.txt", "r") as f:
 #    print(solve2(f.read()[:-1]))
 
+# Notes: 150 is too low
