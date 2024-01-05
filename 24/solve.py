@@ -100,6 +100,115 @@ def dedup_intersections(intersections: Dict[Tuple[Any], Tuple[Any]]) -> Tuple[Tu
     return tuple(deduped)
 
 
+def parse_all_hail(s: str, num_points: int) -> Tuple[Tuple[int], Tuple[int]]:
+    position_1 = tuple(int(num) for num in s.split(" @ ")[0].split(", "))
+    velocity = tuple(int(num) for num in s.split(" @ ")[1].split(", "))
+    positions = tuple(tuple([position_1[0] + velocity[0]*i, position_1[1] + velocity[1]*i, position_1[2] + velocity[2]*i]) for i in range(num_points))
+    return tuple([positions, velocity])
+
+
+def get_distances(hails: Tuple[Tuple[Tuple[int]], Tuple[int]]) -> int:
+    distances_dict = {}
+    num_points = len(hails)
+    print(f"num_points = {num_points}")
+    for i in range(1,num_points-1):
+        print(f"i = {i}")
+        for hail in hails:
+            for other_hail in hails:
+                if hail != other_hail:
+                    first = hail[0][i]
+                    print(f"first = {first}")
+                    second = other_hail[0][i+1]
+                    print(f"second = {second}")
+                    dist = round(get_dist(first, second),1)
+                    print(f"dist = {dist}")
+                    if i == 1:
+                        distances_dict[dist] = [[hail, other_hail]]
+                    else:
+                        if dist in distances_dict:
+                            distances_dict[dist] += [[hail, other_hail]]
+                    #else:
+                    #    distances_dict[dist] += [[hail, other_hail]]
+    return distances_dict
+
+
+def get_next_point(i: int, j: int) -> int:
+    sign = 1 if j >= i else -1
+    diff = abs(i-j)
+    return diff * sign
+
+
+def get_paths(hails: Tuple[Tuple[Tuple[int]], Tuple[int]]) -> int:
+    path_dict = {}
+    starting_positions = [hail[0][1] for hail in hails]
+    all_points = []
+    for hail in hails:
+        all_points += hail[0]
+    all_points = set(all_points)
+    print(f"all_points = {sorted(list(all_points))}")
+    exploration_depth = 10
+    positions_max_depth = 4
+    for starting_position in starting_positions:
+        #second_positions = [hail[0][2] for hail in hails if hail[0][1] != starting_position]
+        for layer in range(2, positions_max_depth):
+            print(f"layer = {layer} : {layer / positions_max_depth}")
+            nth_positions = [hail[0][layer] for hail in hails if hail[0][1] != starting_position]
+            velocities = []
+            for nth_position in nth_positions:
+                x_velocity = get_next_point(starting_position[0], nth_position[0])
+                y_velocity = get_next_point(starting_position[1], nth_position[1])
+                z_velocity = get_next_point(starting_position[2], nth_position[2])
+                velocities += [tuple([x_velocity, y_velocity, z_velocity])]
+            for velocity in velocities:
+                current_poss = starting_position
+                for i in range(exploration_depth):
+                    current_poss = (current_poss[0]+velocity[0], current_poss[1]+velocity[1], current_poss[2]+velocity[2])
+                    if current_poss in all_points:
+                        if (starting_position, velocity) not in path_dict:
+                            path_dict[(starting_position, velocity)] = [(current_poss, layer-1)]
+                        else:
+                            path_dict[(starting_position, velocity)] += [(current_poss, layer-1)]
+    return path_dict
+        
+
+def get_score(hits: Dict[Tuple[Tuple[int]], Tuple[Tuple[int]]]) -> int:
+    # hits = {((21, 14, 12), (-6, 2, 4)): [((15, 16, 16), 2), ((9, 18, 20), 2)]}
+    winning_hits = 0
+    winner = None
+    for hit, results in hits.items():
+        if len(results) > winning_hits:
+            winning_hits = len(results)
+            winner = hit
+    intersections = hits[winner]
+    first_intersection = winner[0]
+    velocity = winner[1]
+    factor = intersections[0][1]
+    start_x = first_intersection[0] + (-1 * (velocity[0]/factor))
+    start_y = first_intersection[1] + (-1 * (velocity[1]/factor))
+    start_z = first_intersection[2] + (-1 * (velocity[2]/factor)) 
+    return (start_x, start_y, start_z)
+
+def solve2(input_string: str) -> List[int]:
+    result = None
+    raw_list = input_string.split("\n")
+    raw_list = [l for l in raw_list]
+    cleaned_list = [item.replace("\n","") for item in raw_list if len(item) > 0] 
+    print(f"cleaned_list = {cleaned_list}")
+    hails = [parse_all_hail(l, 10) for l in cleaned_list]
+    print(f"hails = {hails}")
+    path_dict = get_paths(hails)
+    print(f"path_dict = {path_dict}")
+    for k, v in path_dict.items():
+        print(f"    {k}: {len(v)} : {v}")
+    hits = {k: v for k, v in path_dict.items() if len(v) > 1}
+    print(f"hits = {hits}")
+    start_pos = get_score(hits)
+    print(f"start_pos = {start_pos}")
+    result = sum(start_pos)
+
+    return result
+
+
 def solve(input_string: str, lower_bound: int, upper_bound: int) -> List[int]:
     result = None
     raw_list = input_string.split("\n")
@@ -125,12 +234,12 @@ def solve(input_string: str, lower_bound: int, upper_bound: int) -> List[int]:
 
 #print(solve(TEST_INPUT,7,27))
         
-with open("input.txt", "r") as f:
-    print(solve(f.read()[:-1], 200000000000000, 400000000000000))
+#with open("input.txt", "r") as f:
+#    print(solve(f.read()[:-1], 200000000000000, 400000000000000))
 
 #print(solve2(TEST_INPUT))
 
-#with open("input.txt", "r") as f:
-#    print(solve2(f.read()[:-1]))
+with open("input.txt", "r") as f:
+    print(solve2(f.read()[:-1]))
 
 # Notes: 150 is too low
